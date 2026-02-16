@@ -1,0 +1,21 @@
+{
+  "name": "signflow-api",
+  "version": "0.1.0",
+  "description": "SignFlow Translation API",
+  "main": "main.py",
+  "scripts": {
+    "dev": "uvicorn main:app --reload",
+    "start": "uvicorn main:app --host 0.0.0.0 --port 8000"
+  },
+  "dependencies": {
+    "fastapi": "^0.104.0",
+    "uvicorn": "^0.24.0",
+    "pydantic": "^2.5.0",
+    "redis": "^5.0.0",
+    "torch": "^2.1.0",
+    "python-multipart": "^0.0.6"
+  },
+  "python": {
+    "version": "3.10+"
+  }
+}

@@ -50,94 +50,179 @@ SignFlow Motion Continuity:
 
 ---
 
-## How It Works
+## Architecture - The 3 Pillars
 
-### 1. Sign Segmentation
-- Break down sign language into atomic signs
-- Identify natural boundaries between signs
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    SignFlow System                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    │
+│  │   Widget    │    │     API     │    │  STMC Core  │    │
+│  │ (Frontend)  │───▶│  (Backend)  │───▶│   (ML AI)   │    │
+│  │  Three.js   │    │   FastAPI   │    │   PyTorch   │    │
+│  └─────────────┘    └─────────────┘    └─────────────┘    │
+│        │                  │                   │             │
+│        │                  │                   │             │
+│        ▼                  ▼                   ▼             │
+│  WebGL Render      Redis Cache          Text-to-Gloss    │
+│  3D Avatar        Translation           Pose Generation  │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
 
-### 2. Transition Analysis
-- Study how human signers move between signs
-- Map "transition signatures" for each sign pair
+### 1. The Web Widget (Frontend)
+- **Framework:** Vanilla JS + Three.js
+- **Purpose:** Embeddable web component that captures text, renders 3D avatar
+- **Output:** WebGL animation rendered in browser
 
-### 3. Motion Synthesis
-- Generate fluid transitions using ML models
-- Apply physics-based motion smoothing
+### 2. The Translation API (Backend)
+- **Framework:** Python FastAPI
+- **Purpose:** Bridge between widget and ML engine
+- **Features:** Redis caching for instant responses
 
-### 4. Avatar Rendering
-- Render smooth, natural-looking sign language
-- Support multiple signing styles and speeds
+### 3. The Inference Engine (ML Core)
+- **Framework:** PyTorch
+- **Purpose:** Text-to-Gloss + Gloss-to-Pose generation
+- **Model:** STMC (Sign Transition Motion Continuity)
 
 ---
 
-## Architecture
+## Repository Structure
 
 ```
-┌─────────────────┐
-│   Sign Input    │
-│  (Text/Video)   │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  Sign Parser    │
-│  - Tokenize     │
-│  - Tag signs    │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Transition      │
-│ Engine (STMC)   │
-│  - Analyze pair │
-│  - Generate     │
-│   transition    │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Avatar Renderer │
-│  - Smooth motion│
-│  - Output video │
-└─────────────────┘
+SignFlow/
+├── widget/                    # Frontend: Embeddable web widget
+│   ├── src/
+│   │   ├── index.ts          # Entry point
+│   │   └── engine/
+│   │       └── renderer.ts   # Three.js 3D avatar
+│   └── package.json
+│
+├── api/                       # Backend: FastAPI server
+│   ├── main.py                # API endpoints
+│   ├── routes/                # API routes
+│   └── package.json
+│
+├── stmc_core/                 # ML: PyTorch models
+│   ├── stmc_model.py         # STMC neural network
+│   ├── data_processing/       # NLP scripts
+│   ├── checkpoints/           # Trained weights
+│   └── package.json
+│
+├── assets/                    # 3D models (.gltf/.glb)
+│
+├── .spec/                     # Specifications
+│   ├── spec-001-core-engine.md
+│   ├── spec-002-avatar-renderer.md
+│   └── spec-003-stmc-model.md
+│
+├── docker-compose.yml         # Local development
+└── README.md
 ```
 
-## Specifications
+---
 
-SignFlow follows a formal specification process:
+## Data Flow
 
-| Spec | Title | Status |
-|------|-------|--------|
-| 001 | SignFlow Core Engine | ✅ |
-| 002 | Avatar Renderer | ✅ |
-| 003 | STMC Transition Model | ✅ |
+```
+1. Extract     User highlights text on host website
+                    │
+                    ▼
+2. Request     Widget POST /translate {"text": "Hello"}
+                    │
+                    ▼
+3. Cache       API checks Redis for cached animation
+                    │
+                    ▼ (cache miss)
+4. NLP         Text → ASL Gloss (e.g., "HELLO")
+                    │
+                    ▼
+5. Generate    STMC Model → Keyframes
+                    │
+                    ▼
+6. Response    JSON: {"fps": 30, "frames": [...]}
+                    │
+                    ▼
+7. Render      Three.js moves 3D avatar joints
+```
 
-See `.spec/` directory for full specifications.
+---
+
+## API Data Contract
+
+```json
+{
+  "text": "Hello",
+  "fps": 30,
+  "frames": [
+    {
+      "RightArm": [0.1, 0.2, 0.3, 0.9],
+      "RightForearm": [0.0, 0.5, 0.0, 0.8],
+      "RightHand": [0.0, 0.0, 0.0, 1.0],
+      "LeftArm": [-0.1, 0.2, -0.3, 0.9],
+      "LeftForearm": [0.0, -0.5, 0.0, 0.8],
+      "LeftHand": [0.0, 0.0, 0.0, 1.0],
+      "Head": [0.0, 0.0, 0.0, 1.0]
+    }
+  ]
+}
+```
 
 ---
 
 ## Getting Started
 
+### Option 1: Docker Compose (Recommended)
+
 ```bash
-# Clone the repo
+# Clone and start
 git clone https://github.com/arananet/SignFlow.git
 cd SignFlow
+docker-compose up
+```
 
-# Install dependencies
+### Option 2: Manual
+
+```bash
+# Backend
+cd api
+pip install -r requirements.txt
+uvicorn main:app --reload
+
+# Widget
+cd widget
 npm install
-
-# Run the demo
 npm run dev
+
+# ML Core
+cd stmc_core
+pip install torch torchvision
+python stmc_model.py
 ```
 
 ---
 
 ## Tech Stack
 
-- **Frontend**: React, Three.js (3D avatar)
-- **ML**: TensorFlow.js for transition prediction
-- **Backend**: Node.js, FastAPI
-- **Video**: MediaStream processing
+| Component | Technology |
+|-----------|------------|
+| Widget | Vanilla JS, Three.js, WebGL |
+| API | Python, FastAPI, Redis |
+| ML | PyTorch, TensorFlow |
+| 3D Models | GLTF/GLB, Blender |
+
+---
+
+## Specifications
+
+See `.spec/` directory for formal specifications:
+
+| Spec | Title |
+|------|-------|
+| 001 | SignFlow Core Engine |
+| 002 | Avatar Renderer |
+| 003 | STMC Transition Model |
 
 ---
 
@@ -156,4 +241,3 @@ MIT License — SignFlow is open source.
 ## Related
 
 - [EdgeNeuro](https://github.com/arananet/edgeneuro) — Neuro-symbolic AI routing
-- [Motion Continuity Research](https://arxiv.org) — Academic foundation for STMC
