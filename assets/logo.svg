@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="90" fill="#1a1a2e"/>
+  
+  <!-- Hand sign icon - stylized -->
+  <path d="M80 60 L80 100 L60 120 M80 100 L100 120 M80 100 L120 100 M100 80 L120 60" 
+        stroke="#00d4ff" stroke-width="8" stroke-linecap="round" fill="none"/>
+  
+  <!-- Motion waves -->
+  <path d="M140 80 Q160 100 140 120" stroke="#00d4ff" stroke-width="4" fill="none" opacity="0.6"/>
+  <path d="M150 70 Q180 100 150 130" stroke="#00d4ff" stroke-width="3" fill="none" opacity="0.4"/>
+  
+  <!-- Flow lines -->
+  <path d="M50 100 Q70 80 90 100 Q70 120 50 100" fill="#00d4ff" opacity="0.3"/>
+  
+  <!-- Text -->
+  <text x="100" y="170" text-anchor="middle" fill="#ffffff" font-family="Arial" font-size="18" font-weight="bold">SIGNFLOW</text>
+</svg>

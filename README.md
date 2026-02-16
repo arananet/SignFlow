@@ -1,4 +1,6 @@
-# SignFlow 🦋
+# SignFlow
+
+<img src="assets/logo.svg" alt="SignFlow Logo" width="200"/>
 
 **Motion Continuity for Natural Sign Language Avatars**
 
