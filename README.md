@@ -52,12 +52,24 @@ SignFlow Motion Continuity:
 
 ## Architecture - The 3 Pillars
 
-```mermaid
-graph LR
-    A[Widget] --> B[API]
-    B --> C[STMC]
-    C --> D[Three.js]
 ```
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│   Widget    │───▶│     API     │───▶│    STMC     │
+│  (Frontend) │    │  (Backend)  │    │   (ML AI)   │
+└─────────────┘    └─────────────┘    └─────────────┘
+      │                  │                   │
+      │                  │                   │
+      ▼                  ▼                   ▼
+ WebGL Render      Redis Cache         Pose Generation
+  3D Avatar        Translation         Text-to-Gloss
+```
+
+**Pipeline:**
+1. User highlights text → Widget captures
+2. Widget → API (FastAPI)
+3. API checks Redis cache
+4. Cache miss → NLP → STMC Model → Coordinates
+5. Return JSON frames → Widget renders 3D avatar
 
 ### 1. The Web Widget (Frontend)
 - **Framework:** Vanilla JS + Three.js
@@ -78,20 +90,44 @@ graph LR
 
 ## Data Flow
 
-```mermaid
-sequenceDiagram
-    User->>Widget: Select text
-    Widget->>API: POST /translate
-    API->>Redis: Check cache
-    alt Cache hit
-        Redis-->>API: Return cached
-    else Cache miss
-        API->>NLP: Text to Gloss
-        NLP-->>API: Gloss
-        API->>STMC: Generate poses
-    end
-    API-->>Widget: Return frames
-    Widget->>Three: Render avatar
+```
+User highlights text
+        │
+        ▼
+┌───────────────────┐
+│ Widget captures   │
+│ POST /translate   │
+└────────┬──────────┘
+         │
+         ▼
+┌───────────────────┐     ┌─────────────┐
+│ API receives      │────▶│ Redis Cache │
+│ text              │     │ Check       │
+└────────┬──────────┘     └──────┬──────┘
+         │                         │
+         │ (cache miss)           │(cache hit)
+         ▼                         │
+┌───────────────────┐              │
+│ NLP: Text→Gloss  │◀─────────────┘
+└────────┬──────────┘
+         │
+         ▼
+┌───────────────────┐
+│ STMC Model        │
+│ Generates poses   │
+└────────┬──────────┘
+         │
+         ▼
+┌───────────────────┐
+│ Return JSON       │
+│ frames            │
+└────────┬──────────┘
+         │
+         ▼
+┌───────────────────┐
+│ Three.js renders  │
+│ 3D avatar         │
+└───────────────────┘
 ```
 
 ---
