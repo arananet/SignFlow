@@ -53,33 +53,10 @@ SignFlow Motion Continuity:
 ## Architecture - The 3 Pillars
 
 ```mermaid
-flowchart LR
-    subgraph User
-        Text[User highlights text]
-    end
-    
-    subgraph Widget["Widget (Frontend)"]
-        DOM[DOM Injection]
-        Three[Three.js Render]
-    end
-    
-    subgraph API["Translation API"]
-        Fast[FastAPI]
-        Redis[(Redis Cache)]
-    end
-    
-    subgraph ML["STMC Core"]
-        NLP[NLP Processor]
-        STMC[STMC Model]
-        Convert[Coordinate Converter]
-    end
-    
-    Text --> DOM --> Fast
-    Fast -->|cache hit| Redis
-    Fast -->|cache miss| NLP
-    NLP --> STMC
-    STMC --> Convert
-    Convert --> Three
+graph LR
+    A[Widget] --> B[API]
+    B --> C[STMC]
+    C --> D[Three.js]
 ```
 
 ### 1. The Web Widget (Frontend)
@@ -103,31 +80,18 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
-    participant User
-    participant Widget
-    participant API
-    participant Redis
-    participant NLP
-    participant STMC
-    participant Three
-
-    User->>Widget: Highlights text
+    User->>Widget: Select text
     Widget->>API: POST /translate
-    
-    alt Cache Hit
-        API->>Redis: Check cache
+    API->>Redis: Check cache
+    alt Cache hit
         Redis-->>API: Return cached
-    else Cache Miss
-        API->>NLP: Text → ASL Gloss
+    else Cache miss
+        API->>NLP: Text to Gloss
         NLP-->>API: Gloss
-        API->>STMC: Generate keyframes
-        STMC-->>API: Pose data
-        API->>Redis: Cache result
+        API->>STMC: Generate poses
     end
-    
     API-->>Widget: Return frames
-    Widget->>Three: Apply rotations
-    Three-->>User: Render 3D
+    Widget->>Three: Render avatar
 ```
 
 ---
