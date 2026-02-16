@@ -22,15 +22,11 @@ Traditional sign language avatars often feel **"stiff"** because they treat sign
 
 ## The Problem
 
-```
-Traditional Avatar Motion:
-
-[HELLO] → [HOW] → [ARE] → [YOU]
-  ⬇️       ⬇️       ⬇️      ⬇️
- Block    Block    Block   Block
-   ↓        ↓        ↓       ↓
- Choppy   Choppy   Choppy  Choppy
-```
+    [HELLO] --> [HOW] --> [ARE] --> [YOU]
+      |         |        |        |
+    Block    Block    Block   Block
+      |         |        |        |
+    Choppy   Choppy   Choppy  Choppy
 
 Each sign is treated as a separate, disconnected animation. The result feels robotic and loses the natural flow of sign language.
 
@@ -38,33 +34,25 @@ Each sign is treated as a separate, disconnected animation. The result feels rob
 
 ## The SignFlow Solution
 
-```
-SignFlow Motion Continuity:
+    [HELLO] === [HOWT === [ARE] === [YOU]
+      |          |          |          |
+  Transition  Transition  Transition  Transition
+      |          |          |          |
+     Fluid     Fluid     Fluid      Fluid
 
-[HELLO] ═══ [HOW] ═══ [ARE] ═══ [YOU]
-  ⬇️         ⬇️         ⬇️        ⬇️
- Transition  Transition Transition
-   ↓           ↓          ↓         ↓
-  Fluid      Fluid      Fluid     Fluid
-```
-
-**STMC (Sign Transition Motion Continuity)** analyzes the space between signs and generates smooth, natural transitions that mirror human signing patterns.
+STMC (Sign Transition Motion Continuity) analyzes the space between signs and generates smooth, natural transitions.
 
 ---
 
 ## Architecture - The 3 Pillars
 
-```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│   Widget    │───▶│     API     │───▶│    STMC     │
-│  (Frontend) │    │  (Backend)  │    │   (ML AI)   │
-└─────────────┘    └─────────────┘    └─────────────┘
-      │                  │                   │
-      │                  │                   │
-      ▼                  ▼                   ▼
- WebGL Render      Redis Cache         Pose Generation
-  3D Avatar        Translation         Text-to-Gloss
-```
+    WIDGET          API             STMC
+    (Frontend)  --> (Backend)   -->  (ML AI)
+        |              |              |
+        |              |              |
+        v              v              v
+   WebGL Render   Redis Cache   Pose Generation
+    3D Avatar    Translation   Text-to-Gloss
 
 **Pipeline:**
 1. User highlights text → Widget captures
@@ -92,45 +80,27 @@ SignFlow Motion Continuity:
 
 ## Data Flow
 
-```
-User highlights text
-        │
-        ▼
-┌───────────────────┐
-│ Widget captures   │
-│ POST /translate   │
-└────────┬──────────┘
-         │
-         ▼
-┌───────────────────┐     ┌─────────────┐
-│ API receives      │────▶│ Redis Cache │
-│ text              │     │ Check       │
-└────────┬──────────┘     └──────┬──────┘
-         │                         │
-         │ (cache miss)           │(cache hit)
-         ▼                         │
-┌───────────────────┐              │
-│ NLP: Text→Gloss  │◀─────────────┘
-└────────┬──────────┘
-         │
-         ▼
-┌───────────────────┐
-│ STMC Model        │
-│ Generates poses   │
-└────────┬──────────┘
-         │
-         ▼
-┌───────────────────┐
-│ Return JSON       │
-│ frames            │
-└────────┬──────────┘
-         │
-         ▼
-┌───────────────────┐
-│ Three.js renders  │
-│ 3D avatar         │
-└───────────────────┘
-```
+    1. User highlights text
+           |
+           v
+    2. Widget captures & POST to /translate
+           |
+           v
+    3. API checks Redis cache
+           |
+           +--> Cache hit --> Return frames
+           |
+           v (cache miss)
+    4. NLP: Text --> ASL Gloss
+           |
+           v
+    5. STMC Model generates poses
+           |
+           v
+    6. Return JSON frames to widget
+           |
+           v
+    7. Three.js renders 3D avatar
 
 ---
 
