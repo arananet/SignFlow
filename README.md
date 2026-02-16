@@ -102,6 +102,18 @@ SignFlow Motion Continuity:
 └─────────────────┘
 ```
 
+## Specifications
+
+SignFlow follows a formal specification process:
+
+| Spec | Title | Status |
+|------|-------|--------|
+| 001 | SignFlow Core Engine | ✅ |
+| 002 | Avatar Renderer | ✅ |
+| 003 | STMC Transition Model | ✅ |
+
+See `.spec/` directory for full specifications.
+
 ---
 
 ## Getting Started
