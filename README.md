@@ -52,23 +52,34 @@ SignFlow Motion Continuity:
 
 ## Architecture - The 3 Pillars
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    SignFlow System                          │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    │
-│  │   Widget    │    │     API     │    │  STMC Core  │    │
-│  │ (Frontend)  │───▶│  (Backend)  │───▶│   (ML AI)   │    │
-│  │  Three.js   │    │   FastAPI   │    │   PyTorch   │    │
-│  └─────────────┘    └─────────────┘    └─────────────┘    │
-│        │                  │                   │             │
-│        │                  │                   │             │
-│        ▼                  ▼                   ▼             │
-│  WebGL Render      Redis Cache          Text-to-Gloss    │
-│  3D Avatar        Translation           Pose Generation  │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph User
+        Text[User highlights text]
+    end
+    
+    subgraph Widget["Widget (Frontend)"]
+        DOM[DOM Injection]
+        Three[Three.js Render]
+    end
+    
+    subgraph API["Translation API (Backend)"]
+        Fast[FastAPI]
+        Redis[(Redis Cache)]
+    end
+    
+    subgraph ML["STMC Core (ML)"]
+        NLP[NLP Processor]
+        STMC[STMC Model]
+        Convert[Coordinate Converter]
+    end
+    
+    Text --> DOM --> Fast
+    Fast -->|cache hit| Redis
+    Fast -->|cache miss| NLP
+    NLP --> STMC
+    STMC --> Convert
+    Convert -->|JSON frames| Three
 ```
 
 ### 1. The Web Widget (Frontend)
@@ -125,26 +136,34 @@ SignFlow/
 
 ## Data Flow
 
-```
-1. Extract     User highlights text on host website
-                    │
-                    ▼
-2. Request     Widget POST /translate {"text": "Hello"}
-                    │
-                    ▼
-3. Cache       API checks Redis for cached animation
-                    │
-                    ▼ (cache miss)
-4. NLP         Text → ASL Gloss (e.g., "HELLO")
-                    │
-                    ▼
-5. Generate    STMC Model → Keyframes
-                    │
-                    ▼
-6. Response    JSON: {"fps": 30, "frames": [...]}
-                    │
-                    ▼
-7. Render      Three.js moves 3D avatar joints
+```mermaid
+sequenceDiagram
+    participant User
+    participant Widget
+    participant API
+    participant Redis
+    participant NLP
+    participant STMC
+    participant Three
+
+    User->>Widget: Highlights text
+    Widget->>API: POST /translate {"text": "Hello"}
+    
+    alt Cache Hit
+        API->>Redis: Check cache
+        Redis-->>API: Return cached animation
+        API-->>Widget: Return frames
+    else Cache Miss
+        API->>NLP: Text → ASL Gloss
+        NLP-->>API: "HELLO"
+        API->>STMC: Generate keyframes
+        STMC-->>API: Pose data
+        API->>Redis: Cache result
+        API-->>Widget: Return frames
+    end
+    
+    Widget->>Three: Apply rotations to avatar
+    Three-->>User: Render 3D animation
 ```
 
 ---
