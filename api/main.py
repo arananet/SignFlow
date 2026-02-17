@@ -103,7 +103,6 @@ async def health():
 async def test():
     """Simple test endpoint"""
     return {"status": "ok", "message": "Backend is working!"}
-    }
 
 @app.get("/debug")
 async def debug():
