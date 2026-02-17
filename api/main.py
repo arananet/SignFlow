@@ -99,6 +99,12 @@ async def health():
         "stmc": STMC_AVAILABLE
     }
 
+@app.get("/test")
+async def test():
+    """Simple test endpoint"""
+    return {"status": "ok", "message": "Backend is working!"}
+    }
+
 @app.get("/debug")
 async def debug():
     """Debug endpoint to check API status"""
