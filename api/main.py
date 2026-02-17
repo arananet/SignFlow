@@ -124,83 +124,56 @@ async def debug():
 
 @app.post("/translate", response_model=TranslationResponse)
 async def translate(request: TranslationRequest):
-    """
-    Translate text to sign language animation
-    
-    Pipeline:
-    1. Text → ASL Gloss (NLP)
-    2. Gloss → Pose Keyframes (STMC Model)
-    3. Poses → Quaternions (Coordinate Converter)
-    
-    Data Contract:
-    {
-      "text": "Hello",
-      "fps": 30,
-      "frames": [
-        { "RightArm": [x, y, z, w], ... }
-      ]
-    }
-    """
     import traceback
-    print(f"[DEBUG] Translate request: text={request.text}, target={request.target}")
+    try:
+        print(f"[DEBUG] Translate request: text={request.text}, target={request.target}")
     
-    text = request.text.strip()
-    if not text:
-        raise HTTPException(status_code=400, detail="Text cannot be empty")
+        text = request.text.strip()
+        if not text:
+            raise HTTPException(status_code=400, detail="Text cannot be empty")
     
-    # Check cache first
-    if cache:
-        cached = cache.get(f"translate:{text.lower()}")
-        if cached:
-            return TranslationResponse(**json.loads(cached))
+        # Check cache first
+        if cache:
+            cached = cache.get(f"translate:{text.lower()}")
+            if cached:
+                return TranslationResponse(**json.loads(cached))
     
-    # === STEP 1: Text to Gloss ===
-    if gloss_processor:
-        gloss = gloss_processor.text_to_gloss(text)
-        gloss_str = ' '.join(gloss)
-    else:
+        # === STEP 1: Text to Gloss ===
         gloss_str = text.upper()
     
-    # === STEP 2 & 3: Generate poses and convert to quaternions ===
-    # TODO: Load PyTorch Model and run inference
-    # For now, generate mock animation
-    
-    frames = []
-    num_frames = request.fps
-    
-    for i in range(num_frames):
-        # Animate the arms for demonstration
-        phase = (i / num_frames) * 3.14159 * 2  # Full cycle
+        # === STEP 2 & 3: Generate poses ===
+        frames = []
+        num_frames = request.fps or 30
         
-        frame = Frame(
-            RightArm=[0.1 * (1 + 0.3 * phase), 0.2, 0.3, 0.9],
-            RightForearm=[0.0, 0.5 + 0.2 * phase, 0.0, 0.8],
-            RightHand=[0.0, 0.0, 0.0, 1.0],
-            LeftArm=[-0.1 * (1 + 0.3 * phase), 0.2, -0.3, 0.9],
-            LeftForearm=[0.0, -0.5 - 0.2 * phase, 0.0, 0.8],
-            LeftHand=[0.0, 0.0, 0.0, 1.0],
-            Head=[0.0, 0.1 * phase, 0.0, 1.0]
+        for i in range(num_frames):
+            phase = (i / num_frames) * 3.14159 * 2
+            frame = Frame(
+                RightArm=[0.1 * (1 + 0.3 * phase), 0.2, 0.3, 0.9],
+                RightForearm=[0.0, 0.5 + 0.2 * phase, 0.0, 0.8],
+                RightHand=[0.0, 0.0, 0.0, 1.0],
+                LeftArm=[-0.1 * (1 + 0.3 * phase), 0.2, -0.3, 0.9],
+                LeftForearm=[0.0, -0.5 - 0.2 * phase, 0.0, 0.8],
+                LeftHand=[0.0, 0.0, 0.0, 1.0],
+                Head=[0.0, 0.1 * phase, 0.0, 1.0]
+            )
+            frames.append(frame)
+    
+        response = TranslationResponse(
+            text=text,
+            gloss=gloss_str,
+            fps=request.fps or 30,
+            frames=frames
         )
-        frames.append(frame)
     
-    # Apply smoothing
-    if converter and len(frames) > 5:
-        frame_dicts = [f.dict() for f in frames]
-        smoothed = converter.smooth_keyframes(frame_dicts, window_size=5)
-        frames = [Frame(**f) for f in smoothed]
+        if cache:
+            cache.setex(f"translate:{text.lower()}", 3600, response.model_dump_json())
     
-    response = TranslationResponse(
-        text=text,
-        gloss=gloss_str,
-        fps=request.fps,
-        frames=frames
-    )
-    
-    # Cache the result (1 hour)
-    if cache:
-        cache.setex(f"translate:{text.lower()}", 3600, response.model_dump_json())
-    
-    return response
+        return response
+        
+    except Exception as e:
+        print(f"[ERROR] Translate failed: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/gloss/{word}")
 async def get_gloss(word: str):
