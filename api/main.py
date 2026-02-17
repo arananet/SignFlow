@@ -24,6 +24,15 @@ try:
 except ImportError:
     STMC_AVAILABLE = False
     print("Warning: STMC core not available, using mock data")
+    
+    # Mock classes for when STMC is not available
+    class CoordinateConverter:
+        def smooth_keyframes(self, frames, window_size=5):
+            return frames
+    
+    class GlossProcessor:
+        def text_to_gloss(self, text):
+            return text.upper().split()
 
 app = FastAPI(
     title="SignFlow API",
