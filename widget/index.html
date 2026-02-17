@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SignFlow - Sign Language Translation</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -46,12 +47,10 @@
     .gloss-output h3 { font-size: 14px; color: #666; margin-bottom: 8px; }
     .gloss-output .gloss-text { font-size: 18px; font-weight: 600; color: #333; }
     .avatar-container {
-      background: #1a1a2e; border-radius: 12px; height: 300px;
-      display: flex; align-items: center; justify-content: center;
-      color: #666; position: relative; overflow: hidden;
+      background: #1a1a2e; border-radius: 12px; height: 400px;
+      position: relative; overflow: hidden;
     }
-    .avatar-placeholder { text-align: center; }
-    .avatar-placeholder .hand { font-size: 60px; margin-bottom: 10px; }
+    #avatar-canvas { width: 100%; height: 100%; }
     
     /* Debug Panel */
     .debug-panel {
@@ -62,7 +61,7 @@
       color: #0f0;
       font-family: 'Monaco', 'Menlo', monospace;
       font-size: 12px;
-      max-height: 300px;
+      max-height: 200px;
       overflow-y: auto;
     }
     .debug-panel h4 { color: #fff; margin-bottom: 10px; }
@@ -74,7 +73,7 @@
     @media (max-width: 600px) {
       header h1 { font-size: 1.8rem; }
       .demo-card { padding: 20px; }
-      .avatar-container { height: 250px; }
+      .avatar-container { height: 300px; }
     }
   </style>
 </head>
@@ -98,10 +97,7 @@
         </div>
         <label>Avatar Animation</label>
         <div class="avatar-container">
-          <div class="avatar-placeholder">
-            <div class="hand">🤟</div>
-            <p>Avatar will appear here</p>
-          </div>
+          <div id="avatar-canvas"></div>
         </div>
       </div>
       
@@ -122,6 +118,12 @@
     const glossText = document.getElementById('gloss-text');
     const debugContent = document.getElementById('debug-content');
     
+    // Three.js variables
+    let scene, camera, renderer, skeleton;
+    let animationFrames = [];
+    let currentFrame = 0;
+    let animationId = null;
+    
     function log(msg, type = 'info') {
       const div = document.createElement('div');
       div.className = 'debug-line debug-' + type;
@@ -131,7 +133,131 @@
       console.log('[' + type.toUpperCase() + ']', msg);
     }
     
+    // Initialize Three.js scene
+    function init3D() {
+      const container = document.getElementById('avatar-canvas');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      
+      // Scene
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x1a1a2e);
+      
+      // Camera
+      camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+      camera.position.set(0, 1, 5);
+      camera.lookAt(0, 1, 0);
+      
+      // Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(width, height);
+      container.appendChild(renderer.domElement);
+      
+      // Lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+      
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(5, 5, 5);
+      scene.add(directionalLight);
+      
+      // Create simple avatar (stick figure)
+      createAvatar();
+      
+      // Handle resize
+      window.addEventListener('resize', () => {
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+      });
+    }
+    
+    function createAvatar() {
+      const material = new THREE.MeshStandardMaterial({ color: 0x4a90d9 });
+      const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+      
+      // Head
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), skinMaterial);
+      head.position.y = 1.7;
+      scene.add(head);
+      
+      // Body
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.2, 1, 8), material);
+      body.position.y = 1.0;
+      scene.add(body);
+      
+      // Arms
+      skeleton = {
+        rightUpperArm: createLimb(0.35, material, 0.15),
+        rightLowerArm: createLimb(0.3, material, -0.15),
+        leftUpperArm: createLimb(0.35, material, -0.15),
+        leftLowerArm: createLimb(0.3, material, -0.15),
+        head: head
+      };
+      
+      skeleton.rightUpperArm.position.set(0.3, 1.4, 0);
+      skeleton.rightLowerArm.position.set(0.55, 1.1, 0);
+      skeleton.leftUpperArm.position.set(-0.3, 1.4, 0);
+      skeleton.leftLowerArm.position.set(-0.55, 1.1, 0);
+      
+      scene.add(skeleton.rightUpperArm);
+      scene.add(skeleton.rightLowerArm);
+      scene.add(skeleton.leftUpperArm);
+      scene.add(skeleton.leftLowerArm);
+      
+      // Start render loop
+      animate();
+    }
+    
+    function createLimb(length, material, xOffset) {
+      const group = new THREE.Group();
+      const limb = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, length, 8), material);
+      limb.position.y = -length / 2;
+      group.add(limb);
+      group.position.x = xOffset;
+      return group;
+    }
+    
+    function animate() {
+      animationId = requestAnimationFrame(animate);
+      
+      // Animate skeleton if we have frames
+      if (animationFrames.length > 0 && skeleton) {
+        const frame = animationFrames[currentFrame];
+        
+        if (frame.RightArm) {
+          skeleton.rightUpperArm.rotation.set(frame.RightArm[0], frame.RightArm[1], frame.RightArm[2]);
+        }
+        if (frame.RightForearm) {
+          skeleton.rightLowerArm.rotation.set(frame.RightForearm[0], frame.RightForearm[1], frame.RightForearm[2]);
+        }
+        if (frame.LeftArm) {
+          skeleton.leftUpperArm.rotation.set(frame.LeftArm[0], frame.LeftArm[1], frame.LeftArm[2]);
+        }
+        if (frame.LeftForearm) {
+          skeleton.leftLowerArm.rotation.set(frame.LeftForearm[0], frame.LeftForearm[1], frame.LeftForearm[2]);
+        }
+        if (frame.Head && skeleton.head) {
+          skeleton.head.rotation.set(frame.Head[0], frame.Head[1], frame.Head[2]);
+        }
+        
+        currentFrame = (currentFrame + 1) % animationFrames.length;
+      }
+      
+      renderer.render(scene, camera);
+    }
+    
+    function playAnimation(frames) {
+      animationFrames = frames;
+      currentFrame = 0;
+    }
+    
     log('Page loaded. API: ' + API_URL, 'info');
+
+    // Initialize 3D scene
+    init3D();
 
     translateBtn.addEventListener('click', async () => {
       const text = textInput.value.trim();
@@ -141,8 +267,6 @@
       resultSection.style.display = 'none';
       
       try {
-        log('Sending POST to ' + API_URL + '/translate', 'info');
-        
         const response = await fetch(API_URL + '/translate', {
           method: 'POST',
           mode: 'cors',
@@ -153,26 +277,27 @@
           body: JSON.stringify({ text: text, target: 'ASL', fps: 30 })
         });
         
-        log('Response status: ' + response.status, response.ok ? 'success' : 'error');
-        
         if (!response.ok) {
-          const errorText = await response.text();
-          log('Error response: ' + errorText, 'error');
-          throw new Error('HTTP ' + response.status + ': ' + errorText);
+          throw new Error('HTTP ' + response.status);
         }
         
         const data = await response.json();
-        log('Response: ' + JSON.stringify(data).substring(0, 200), 'success');
+        log('Frames received: ' + (data.frames?.length || 0), 'success');
         
-        glossText.textContent = data.gloss || data.text?.toUpperCase() || text.toUpperCase();
+        glossText.textContent = data.gloss || text.toUpperCase();
+        
+        // Play animation
+        if (data.frames && data.frames.length > 0) {
+          playAnimation(data.frames);
+          log('Animation playing: ' + data.frames.length + ' frames', 'success');
+        } else {
+          log('No animation frames', 'info');
+        }
+        
         resultSection.style.display = 'block';
-        log('Translation complete!', 'success');
         
       } catch (err) {
-        log('ERROR: ' + err.name + ': ' + err.message, 'error');
-        if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
-          log('CORS or network error - check console for details', 'error');
-        }
+        log('ERROR: ' + err.message, 'error');
       }
     });
   </script>

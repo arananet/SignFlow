@@ -128,13 +128,36 @@ async def translate(request: TranslationRequest):
     import traceback
     try:
         text = request.text.strip() or "hello"
+        fps = request.fps or 30
         
-        # Simple mock response
+        # Generate animation frames
+        frames = []
+        words = text.upper().split()
+        
+        for word_idx, word in enumerate(words):
+            # Each word gets a portion of frames
+            frames_per_word = max(10, fps // max(1, len(words)))
+            
+            for i in range(frames_per_word):
+                phase = (i / frames_per_word) * 3.14159 * 2
+                
+                # Animate arms based on phase
+                frame = {
+                    "RightArm": [0.3 * (1 + 0.2 * phase), 0.2, 0.1 * phase, 0.9],
+                    "RightForearm": [0.1 * phase, 0.4 + 0.1 * phase, 0.0, 0.9],
+                    "RightHand": [0.0, 0.0, 0.0, 1.0],
+                    "LeftArm": [-0.3 * (1 + 0.2 * phase), 0.2, -0.1 * phase, 0.9],
+                    "LeftForearm": [-0.1 * phase, 0.4 + 0.1 * phase, 0.0, 0.9],
+                    "LeftHand": [0.0, 0.0, 0.0, 1.0],
+                    "Head": [0.0, 0.05 * phase, 0.0, 1.0]
+                }
+                frames.append(frame)
+        
         return {
             "text": text,
             "gloss": text.upper(),
-            "fps": request.fps or 30,
-            "frames": []
+            "fps": fps,
+            "frames": frames
         }
         
     except Exception as e:
