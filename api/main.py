@@ -105,6 +105,11 @@ async def test():
     """Simple test endpoint"""
     return {"status": "ok", "message": "Backend is working!"}
 
+@app.post("/test-post")
+async def test_post(data: dict):
+    """Test POST endpoint"""
+    return {"status": "ok", "received": data}
+
 @app.get("/debug")
 async def debug():
     """Debug endpoint to check API status"""
