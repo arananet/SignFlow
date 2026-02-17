@@ -43,10 +43,11 @@ app = FastAPI(
 # CORS middleware - Allow any website to embed your widget
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow any website to embed your widget
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Redis cache
