@@ -14,6 +14,9 @@ RUN echo 'omit=' > .npmrc && \
 # Copy source code
 COPY widget/ .
 
+# Copy index.html to dist for serving
+RUN mkdir -p dist && cp index.html dist/
+
 # Build
 RUN npm run build
 
