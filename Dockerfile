@@ -17,5 +17,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY api/ .
 
-# Run the application
-CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run using shell to expand $PORT
+CMD sh -c "python -m uvicorn main:app --host 0.0.0.0 --port $PORT"
