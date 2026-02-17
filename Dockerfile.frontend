@@ -14,16 +14,19 @@ RUN echo 'omit=' > .npmrc && \
 # Copy source code
 COPY widget/ .
 
-# Copy index.html to dist for serving
-RUN mkdir -p dist && cp index.html dist/
-
 # Build
 RUN npm run build
 
 # Serve stage
 FROM nginx:alpine
 
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Copy index.html to dist root
+COPY widget/index.html /usr/share/nginx/html/index.html
+
+# Copy built files
+COPY --from=builder /app/dist /usr/share/nginx/html/
+
+# Copy nginx config
 COPY widget/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
