@@ -5,9 +5,12 @@
     "backend": {
       "source": ".",
       "dockerfile": "Dockerfile",
-      "targetPort": 8000,
+      "healthcheck": {
+        "path": "/health"
+      },
       "environment": {
-        "REDIS_URL": "{{redis.REDIS_URL}}"
+        "REDIS_URL": "{{redis.REDIS_URL}}",
+        "PORT": "8000"
       }
     },
     "redis": {
