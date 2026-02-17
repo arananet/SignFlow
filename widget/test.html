@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SignFlow - Sign Language Translation</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      color: white;
+      margin-bottom: 30px;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+
+    header p {
+      opacity: 0.9;
+      font-size: 1.1rem;
+    }
+
+    .demo-card {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+
+    .input-section {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #333;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 16px;
+      resize: vertical;
+      min-height: 80px;
+      transition: border-color 0.3s;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .translate-btn {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .translate-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+    }
+
+    .translate-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .result-section {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+    }
+
+    .gloss-output {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    .gloss-output h3 {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .gloss-output .gloss-text {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .avatar-container {
+      background: #1a1a2e;
+      border-radius: 12px;
+      height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .avatar-container canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .avatar-placeholder {
+      text-align: center;
+    }
+
+    .avatar-placeholder .hand {
+      font-size: 60px;
+      margin-bottom: 10px;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .loading.active {
+      display: block;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error {
+      background: #fee;
+      color: #c00;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 15px;
+      display: none;
+    }
+
+    .error.active {
+      display: block;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+
+      header h1 {
+        font-size: 1.8rem;
+      }
+
+      .demo-card {
+        padding: 20px;
+      }
+
+      .avatar-container {
+        height: 250px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🤟 SignFlow</h1>
+      <p>Sign Language Translation Widget</p>
+    </header>
+
+    <div class="demo-card">
+      <div class="input-section">
+        <label for="text-input">Enter text to translate:</label>
+        <textarea id="text-input" placeholder="Hello, how are you?">Hello</textarea>
+      </div>
+
+      <button class="translate-btn" id="translate-btn">Translate to Sign Language</button>
+
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Translating...</p>
+      </div>
+
+      <div class="error" id="error"></div>
+
+      <div class="result-section" id="result-section" style="display: none;">
+        <div class="gloss-output">
+          <h3>ASL Gloss</h3>
+          <div class="gloss-text" id="gloss-text"></div>
+        </div>
+
+        <label>Avatar Animation</label>
+        <div class="avatar-container" id="avatar-container">
+          <div class="avatar-placeholder" id="placeholder">
+            <div class="hand">🤟</div>
+            <p>Avatar will appear here</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // SignFlow Widget Test
+    const API_URL = window.location.hostname === 'localhost' 
+      ? 'http://localhost:8000' 
+      : 'https://signflow-api-production.up.railway.app';
+
+    const textInput = document.getElementById('text-input');
+    const translateBtn = document.getElementById('translate-btn');
+    const loading = document.getElementById('loading');
+    const error = document.getElementById('error');
+    const resultSection = document.getElementById('result-section');
+    const glossText = document.getElementById('gloss-text');
+    const placeholder = document.getElementById('placeholder');
+
+    translateBtn.addEventListener('click', async () => {
+      const text = textInput.value.trim();
+      if (!text) return;
+
+      // Show loading
+      loading.classList.add('active');
+      error.classList.remove('active');
+      resultSection.style.display = 'none';
+
+      try {
+        // Call the API
+        const response = await fetch(`${API_URL}/translate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, target: 'ASL' })
+        });
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Display gloss
+        glossText.textContent = data.gloss || data.text?.toUpperCase() || text.toUpperCase();
+        
+        // Show result
+        resultSection.style.display = 'block';
+        placeholder.style.display = 'none';
+        
+      } catch (err) {
+        error.textContent = `Error: ${err.message}. Make sure the API is running!`;
+        error.classList.add('active');
+      } finally {
+        loading.classList.remove('active');
+      }
+    });
+
+    // Allow Enter key to translate
+    textInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        translateBtn.click();
+      }
+    });
+  </script>
+</body>
+</html>
