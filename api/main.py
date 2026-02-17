@@ -48,7 +48,7 @@ except:
     cache = None
 
 # Initialize processors (when available)
-converter = CoordinateConverter()  # Always available for smoothing
+converter = CoordinateConverter() if STMC_AVAILABLE else None
 gloss_processor = GlossProcessor() if STMC_AVAILABLE else None
 
 # Data Models
