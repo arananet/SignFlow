@@ -38,7 +38,7 @@
       transition: transform 0.2s, box-shadow 0.2s;
     }
     .translate-btn:hover {
-Y(-2px      transform: translate);
+      transform: translateY(-2px);
       box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
     }
     .result-section { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
@@ -141,15 +141,16 @@ Y(-2px      transform: translate);
       resultSection.style.display = 'none';
       
       try {
-        log('Sending request to ' + API_URL + '/translate', 'info');
+        log('Sending POST to ' + API_URL + '/translate', 'info');
         
         const response = await fetch(API_URL + '/translate', {
           method: 'POST',
+          mode: 'cors',
           headers: { 
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           },
-          body: JSON.stringify({ text: text, target: 'ASL' })
+          body: JSON.stringify({ text: text, target: 'ASL', fps: 30 })
         });
         
         log('Response status: ' + response.status, response.ok ? 'success' : 'error');
@@ -161,15 +162,17 @@ Y(-2px      transform: translate);
         }
         
         const data = await response.json();
-        log('Response received: ' + JSON.stringify(data).substring(0, 100) + '...', 'success');
+        log('Response: ' + JSON.stringify(data).substring(0, 200), 'success');
         
         glossText.textContent = data.gloss || data.text?.toUpperCase() || text.toUpperCase();
         resultSection.style.display = 'block';
         log('Translation complete!', 'success');
         
       } catch (err) {
-        log('ERROR: ' + err.message, 'error');
-        log('Make sure backend is running at: ' + API_URL, 'error');
+        log('ERROR: ' + err.name + ': ' + err.message, 'error');
+        if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
+          log('CORS or network error - check console for details', 'error');
+        }
       }
     });
   </script>
