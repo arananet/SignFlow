@@ -10,43 +10,6 @@
   "deploy": {
     "numReplicas": 1,
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10,
-    "dockerfilePath": "Dockerfile"
-  },
-  "services": {
-    "backend": {
-      "build": {
-        "dockerfilePath": "Dockerfile"
-      },
-      "environment": {
-        "REDIS_URL": "redis://redis:6379",
-        "PORT": "8000"
-      },
-      "healthcheck": {
-        "path": "/health",
-        "interval": 30,
-        "timeout": 10,
-        "retries": 3
-      },
-      "deploy": {
-        "restartPolicyType": "ON_FAILURE",
-        "restartPolicyMaxRetries": 10
-      }
-    },
-    "frontend": {
-      "build": {
-        "dockerfilePath": "Dockerfile.frontend"
-      },
-      "environment": {
-        "API_URL": "https://signflow-backend-production.up.railway.app"
-      },
-      "deploy": {
-        "restartPolicyType": "ON_FAILURE",
-        "restartPolicyMaxRetries": 10
-      }
-    },
-    "redis": {
-      "image": "redis:7-alpine"
-    }
+    "restartPolicyMaxRetries": 10
   }
 }
