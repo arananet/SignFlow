@@ -64,6 +64,7 @@ gloss_processor = GlossProcessor() if STMC_AVAILABLE else None
 # Data Models
 class TranslationRequest(BaseModel):
     text: str
+    target: Optional[str] = "ASL"
     fps: Optional[int] = 30
 
 class Frame(BaseModel):
