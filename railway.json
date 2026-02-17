@@ -3,15 +3,18 @@
   "name": "signflow",
   "services": {
     "backend": {
-      "source": ".",
+      "source": "api",
       "dockerfile": "Dockerfile",
       "healthcheck": {
         "path": "/health"
       },
       "environment": {
-        "REDIS_URL": "{{redis.REDIS_URL}}",
-        "PORT": "8000"
+        "REDIS_URL": "{{redis.REDIS_URL}}"
       }
+    },
+    "frontend": {
+      "source": "widget",
+      "dockerfile": "Dockerfile"
     },
     "redis": {
       "image": "redis:7-alpine"
