@@ -3,7 +3,7 @@
   "name": "signflow",
   "services": {
     "backend": {
-      "source": "api",
+      "source": "./api",
       "dockerfile": "Dockerfile",
       "healthcheck": {
         "path": "/health"
@@ -13,7 +13,7 @@
       }
     },
     "frontend": {
-      "source": "widget",
+      "source": "./widget",
       "dockerfile": "Dockerfile"
     },
     "redis": {
