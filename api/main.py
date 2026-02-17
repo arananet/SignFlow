@@ -13,6 +13,8 @@ import json
 import os
 import sys
 
+API_URL = os.getenv("API_URL", "unknown")
+
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -88,6 +90,18 @@ async def health():
         "stmc": STMC_AVAILABLE
     }
 
+@app.get("/debug")
+async def debug():
+    """Debug endpoint to check API status"""
+    return {
+        "status": "ok",
+        "api_url": API_URL,
+        "cache": "connected" if cache else "disconnected",
+        "stmc_available": STMC_AVAILABLE,
+        "converter": "initialized" if converter else "none",
+        "gloss_processor": "initialized" if gloss_processor else "none"
+    }
+
 @app.post("/translate", response_model=TranslationResponse)
 async def translate(request: TranslationRequest):
     """
@@ -107,6 +121,9 @@ async def translate(request: TranslationRequest):
       ]
     }
     """
+    import traceback
+    print(f"[DEBUG] Translate request: text={request.text}, target={request.target}")
+    
     text = request.text.strip()
     if not text:
         raise HTTPException(status_code=400, detail="Text cannot be empty")

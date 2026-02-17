@@ -38,7 +38,7 @@
       transition: transform 0.2s, box-shadow 0.2s;
     }
     .translate-btn:hover {
-      transform: translateY(-2px);
+Y(-2px      transform: translate);
       box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
     }
     .result-section { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
@@ -52,6 +52,25 @@
     }
     .avatar-placeholder { text-align: center; }
     .avatar-placeholder .hand { font-size: 60px; margin-bottom: 10px; }
+    
+    /* Debug Panel */
+    .debug-panel {
+      margin-top: 20px;
+      background: #1a1a2e;
+      border-radius: 12px;
+      padding: 15px;
+      color: #0f0;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .debug-panel h4 { color: #fff; margin-bottom: 10px; }
+    .debug-line { margin: 5px 0; }
+    .debug-error { color: #ff6b6b; }
+    .debug-success { color: #51cf66; }
+    .debug-info { color: #74c0fc; }
+    
     @media (max-width: 600px) {
       header h1 { font-size: 1.8rem; }
       .demo-card { padding: 20px; }
@@ -71,6 +90,7 @@
         <textarea id="text-input" placeholder="Hello, how are you?">Hello</textarea>
       </div>
       <button class="translate-btn" id="translate-btn">Translate to Sign Language</button>
+      
       <div class="result-section" id="result-section" style="display: none;">
         <div class="gloss-output">
           <h3>ASL Gloss</h3>
@@ -84,30 +104,72 @@
           </div>
         </div>
       </div>
+      
+      <div class="debug-panel" id="debug-panel">
+        <h4>🔍 Debug Log</h4>
+        <div id="debug-content"></div>
+      </div>
     </div>
   </div>
 
   <script>
+    // UPDATE THIS to your backend URL
     const API_URL = 'https://signflow-production.up.railway.app';
+    
     const textInput = document.getElementById('text-input');
     const translateBtn = document.getElementById('translate-btn');
     const resultSection = document.getElementById('result-section');
     const glossText = document.getElementById('gloss-text');
+    const debugContent = document.getElementById('debug-content');
+    
+    function log(msg, type = 'info') {
+      const div = document.createElement('div');
+      div.className = 'debug-line debug-' + type;
+      div.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+      debugContent.appendChild(div);
+      debugContent.scrollTop = debugContent.scrollHeight;
+      console.log('[' + type.toUpperCase() + ']', msg);
+    }
+    
+    log('Page loaded. API: ' + API_URL, 'info');
 
     translateBtn.addEventListener('click', async () => {
       const text = textInput.value.trim();
       if (!text) return;
+      
+      log('Translating: ' + text, 'info');
+      resultSection.style.display = 'none';
+      
       try {
+        log('Sending request to ' + API_URL + '/translate', 'info');
+        
         const response = await fetch(API_URL + '/translate', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, target: 'ASL' })
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ text: text, target: 'ASL' })
         });
+        
+        log('Response status: ' + response.status, response.ok ? 'success' : 'error');
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          log('Error response: ' + errorText, 'error');
+          throw new Error('HTTP ' + response.status + ': ' + errorText);
+        }
+        
         const data = await response.json();
+        log('Response received: ' + JSON.stringify(data).substring(0, 100) + '...', 'success');
+        
         glossText.textContent = data.gloss || data.text?.toUpperCase() || text.toUpperCase();
         resultSection.style.display = 'block';
+        log('Translation complete!', 'success');
+        
       } catch (err) {
-        alert('Error: ' + err.message);
+        log('ERROR: ' + err.message, 'error');
+        log('Make sure backend is running at: ' + API_URL, 'error');
       }
     });
   </script>
