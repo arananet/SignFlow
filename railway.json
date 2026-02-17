@@ -13,8 +13,8 @@
       }
     },
     "frontend": {
-      "source": "./widget",
-      "dockerfile": "Dockerfile"
+      "source": ".",
+      "dockerfile": "Dockerfile.frontend"
     },
     "redis": {
       "image": "redis:7-alpine"
