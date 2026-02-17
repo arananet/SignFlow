@@ -103,7 +103,7 @@ export class SignFlowWidget {
     // Load avatar model
     const loader = new GLTFLoader();
     loader.load(
-      'https://your-cdn.com/avatar.glb',
+      '/assets/avatar.glb',
       (gltf) => {
         const model = gltf.scene;
         this.scene!.add(model);

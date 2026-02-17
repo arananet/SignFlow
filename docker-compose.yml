@@ -13,8 +13,8 @@ services:
   # FastAPI Backend
   api:
     build: 
-      context: ./api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: api/Dockerfile
     ports:
       - "8000:8000"
     environment:
@@ -24,6 +24,7 @@ services:
       - redis
     volumes:
       - ./api:/app
+      - ./stmc_core:/app/stmc_core
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   # Frontend Widget (dev)
@@ -36,7 +37,7 @@ services:
     volumes:
       - ./widget:/app
       - /app/node_modules
-    command: npm run dev
+    command: npm run dev -- --host 0.0.0.0 --port 3000
 
 volumes:
   redis_data:

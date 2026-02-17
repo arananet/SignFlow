@@ -38,7 +38,7 @@ export class AvatarRenderer {
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
     this.renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.enabled = true;
     container.appendChild(this.renderer.domElement);
     
     // Lighting

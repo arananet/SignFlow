@@ -1,58 +1,117 @@
 # Spec 003: STMC Transition Model
 
-The STMC (Sign Transition Motion Continuity) model predicts smooth transitions between signs using machine learning.
+The STMC (Sign Transition Motion Continuity) model generates smooth pose transitions between signs using PyTorch.
 
-## Architecture
+## Overview
 
-1.  **ML Framework:** TensorFlow.js
-2.  **Model Type:** Sequence-to-Sequence (Seq2Seq) with Attention
-3.  **Input:** Sign pair embeddings
-4.  **Output:** Transition keyframes
+| Aspect | Value |
+|--------|-------|
+| Framework | PyTorch |
+| Architecture | Seq2Seq with Bahdanau Attention |
+| Location | `stmc_core/stmc_model.py` |
+| Output | Quaternion keyframes per joint |
 
-## Model Architecture
+## Architecture Diagram
 
 ```
-Input: [Sign_A_Embedding, Sign_B_Embedding]
-  ↓
-Encoder: Bi-LSTM
-  ↓
-Attention Layer
-  ↓
-Decoder: LSTM → Transition Keyframes
-  ↓
-Output: [Frame_1, Frame_2, ..., Frame_N] (interpolated poses)
+┌─────────────────────────────────────────────────────────┐
+│                    STMCModel                            │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  Sign A Embed ──┐                                       │
+│                 ├──► Bi-LSTM Encoder ──► Context        │
+│  Sign B Embed ──┘           │                           │
+│                             ▼                           │
+│                    Bahdanau Attention                   │
+│                             │                           │
+│                             ▼                           │
+│                      LSTM Decoder                       │
+│                             │                           │
+│                             ▼                           │
+│              Linear Projection (num_joints * 4)         │
+│                             │                           │
+│                             ▼                           │
+│              Output: [batch, frames, joints*4]          │
+│                      (quaternions)                      │
+└─────────────────────────────────────────────────────────┘
 ```
 
-## Training Data
+## Class Reference
 
-- **Source:** ASL and LSE sign language datasets
-- **Annotation:** Human-labeled sign boundaries and transitions
-- **Size:** ~10,000 sign pairs with transitions
+### `STMCModel(nn.Module)`
 
-## Inference
+**File:** `stmc_core/stmc_model.py`
 
-**Input:**
+**Constructor Parameters:**
 
-- `sign_a` (embedding): End pose of current sign
-- `sign_b` (embedding): Start pose of next sign
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `embedding_dim` | int | 256 | Input embedding dimension |
+| `hidden_dim` | int | 512 | LSTM hidden state size |
+| `num_layers` | int | 2 | LSTM layer count |
+| `dropout` | float | 0.1 | Dropout probability |
+| `num_joints` | int | 21 | Body joints to animate |
 
-**Process:**
+**Layers:**
+- `encoder`: `nn.LSTM` — Bidirectional, `batch_first=True`
+- `attention`: `nn.Linear(hidden_dim * 2, hidden_dim)`
+- `decoder`: `nn.LSTM` — Unidirectional
+- `output_proj`: `nn.Linear(hidden_dim, num_joints * 4)`
 
-1.  Encode both sign embeddings
-2.  Apply attention mechanism
-3.  Generate transition frames
-4.  Apply temporal smoothing
+## Inference API
 
-**Output:**
+```python
+def forward(
+    self, 
+    sign_a_embed: torch.Tensor,  # [batch, seq_len, embedding_dim]
+    sign_b_embed: torch.Tensor,  # [batch, seq_len, embedding_dim]
+    transition_length: int = 30   # frames to generate
+) -> torch.Tensor:
+    """
+    Returns: [batch, transition_length, num_joints * 4]
+    """
+```
 
-- `keyframes` (array): Array of interpolated poses
+## Supporting Classes
 
-## Fallback
+### `CoordinateConverter`
 
-If ML model unavailable, use **linear interpolation** between sign poses.
+**File:** `stmc_core/coordinate_converter.py`
+
+Converts MediaPipe/SMPL-X landmarks to Three.js quaternions.
+
+**Methods:**
+- `landmarks_to_quaternions(landmarks, format)` → `Dict[str, List[float]]`
+- `smooth_keyframes(frames, window_size)` → `List[Dict]`
+
+### `GlossProcessor`
+
+Converts English text to ASL Gloss notation.
+
+**Methods:**
+- `text_to_gloss(text)` → `List[str]`
+
+## Output Format
+
+Each frame contains quaternion rotations `[x, y, z, w]` for:
+
+```python
+[
+    'RightArm', 'RightForearm', 'RightHand',
+    'LeftArm', 'LeftForearm', 'LeftHand',
+    'Head', 'Neck', 'Spine',
+    # ... additional joints
+]
+```
 
 ## Performance
 
-- **< 50ms** inference on modern devices
-- **~30 frames** per transition
-- **Quantized** for mobile deployment
+| Metric | Target |
+|--------|--------|
+| Inference Time | < 100ms |
+| Frames per Transition | 30 |
+| Model Size | ~50MB |
+
+## Fallback
+
+If model unavailable (`STMC_AVAILABLE = False` in API), return mock animation with sinusoidal arm movements.

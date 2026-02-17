@@ -139,7 +139,7 @@ docker-compose up
 |-----------|------------|
 | Widget | Vanilla JS, Three.js, WebGL |
 | API | Python, FastAPI, Redis |
-| ML | PyTorch, TensorFlow |
+| ML | PyTorch |
 | 3D Models | GLTF/GLB, Blender |
 
 ---

@@ -52,7 +52,7 @@ class CoordinateConverter:
         
         # Hip
         'left_hip': 'Spine',
-        'right_h hip': 'Spine',
+        'right_hip': 'Spine',
     }
     
     # Standard avatar skeleton (simplified)
@@ -292,7 +292,6 @@ class GlossProcessor:
         'help': 'HELP',
         'need': 'NEED',
         'want': 'WANT',
-        'have': 'HAVE',
         'have': 'HAVE',
         'go': 'GO',
         'come': 'COME',
